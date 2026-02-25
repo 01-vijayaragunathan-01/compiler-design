@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Syntax Analyzer – Compiler Design Project</title>
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #1a1a1a, #2c2c2c, #121212);
+    display: flex;
+    justify-content: center;
+    color: #f5f5f5;
+}
+
+.wrapper {
+    width: 95%;
+    max-width: 1100px;
+    margin-top: 40px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+    color: #7d0404;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #885858;
+    margin-bottom: 30px;
+}
+
+textarea {
+    width: 100%;
+    height: 220px;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 14px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    background: #1e1e1e;
+    color: #f8f8f8;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+button {
+    padding: 10px 18px;
+    margin-top: 15px;
+    margin-right: 8px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+#analyze {
+    background: #7d0404;
+    color: #1a1a1a;
+}
+
+#analyze:hover {
+    background: #885858;
+    transform: scale(1.05);
+}
+
+#clear {
+    background: #444;
+    color: white;
+}
+
+#clear:hover {
+    background: #666;
+}
+
+.panel {
+    margin-top: 30px;
+    padding: 20px;
+    background: #1f1f1f;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+}
+
+.panel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 6px;
+    color: #7d0404;
+}
+
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.KEYWORD { background: #885858; color: black; }
+.IDENTIFIER { background: #7d0404; color: black; }
+.INTEGER { background: #8ecae6; color: black; }
+.STRING { background: #9a2a2a; color: black; }
+.OPERATOR { background: #7d0404; color: black; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 8px;
+    background: #2a2a2a;
+    font-size: 13px;
+    color: #885858;
+}
+
+td {
+    padding: 8px;
+    border-bottom: 1px solid #333;
+}
+
+tr:hover {
+    background: #2f2f2f;
+}
+
+pre {
+    background: #121212;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13px;
+}
+
+footer {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 13px;
+    color: #885858;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<h1>Syntax Analyzer</h1>
+<div class="subtitle">
+Compiler Design Project<br>
+TARUNKUMAR P | RA2311003050394
+</div>
+
+<textarea id="code">
+int main() {
+    int x = 10;
+    if(x > 5){
+        x++;
+    }
+    return 0;
+}
+</textarea>
+
+<br>
+<button id="analyze">Analyze</button>
+<button id="clear">Clear</button>
+
+<div class="panel">
+<h3>Tokens</h3>
+<div id="tokenSummary"></div>
+<table>
+<thead>
+<tr><th>#</th><th>Type</th><th>Value</th></tr>
+</thead>
+<tbody id="tokenBody"></tbody>
+</table>
+</div>
+
+<div class="panel">
+<h3>AST (Simple Representation)</h3>
+<pre id="astOutput"></pre>
+</div>
+
+<footer>
+Browser-Based Syntax Analyzer – Compiler Design
+</footer>
+
+</div>
+
+<script>
+const keywords = new Set(["int","float","return","if","else","for","while"]);
+
+function tokenize(code){
+  let tokens = [];
+  let words = code.match(/"[^"]*"|\w+|[{}();=+><]/g);
+
+  if(!words) return tokens;
+
+  words.forEach(word=>{
+    if(keywords.has(word)){
+      tokens.push({type:"KEYWORD", value:word});
+    }
+    else if(/^\d+$/.test(word)){
+      tokens.push({type:"INTEGER", value:word});
+    }
+    else if(/^".*"$/.test(word)){
+      tokens.push({type:"STRING", value:word});
+    }
+    else if(/[{}();=+><]/.test(word)){
+      tokens.push({type:"OPERATOR", value:word});
+    }
+    else{
+      tokens.push({type:"IDENTIFIER", value:word});
+    }
+  });
+
+  return tokens;
+}
+
+function generateAST(tokens){
+  let ast = "PROGRAM\n";
+  tokens.forEach(t=>{
+    ast += " ├─ " + t.type + " (" + t.value + ")\n";
+  });
+  return ast;
+}
+
+document.getElementById("analyze").onclick = function(){
+  let code = document.getElementById("code").value;
+  let tokens = tokenize(code);
+
+  let tbody = document.getElementById("tokenBody");
+  let summary = document.getElementById("tokenSummary");
+  tbody.innerHTML = "";
+  summary.innerHTML = "";
+
+  let counts = {};
+  tokens.forEach((t,i)=>{
+    counts[t.type] = (counts[t.type]||0)+1;
+    tbody.innerHTML += "<tr><td>"+(i+1)+"</td><td>"+t.type+"</td><td>"+t.value+"</td></tr>";
+  });
+
+  Object.keys(counts).forEach(type=>{
+    summary.innerHTML += `<span class="badge ${type}">${type}: ${counts[type]}</span>`;
+  });
+
+  document.getElementById("astOutput").textContent = generateAST(tokens);
+};
+
+document.getElementById("clear").onclick = function(){
+  document.getElementById("code").value="";
+  document.getElementById("tokenBody").innerHTML="";
+  document.getElementById("tokenSummary").innerHTML="";
+  document.getElementById("astOutput").textContent="";
+};
+</script>
+
+</body>
+</html>
