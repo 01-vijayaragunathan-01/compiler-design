@@ -1,270 +1,419 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta charset="UTF-8">
-<title>Syntax Analyzer – Compiler Design Project</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntax Analyzer</title>
 
-<style>
-body {
-    margin: 0;
-    padding: 0;
-    font-family: "Segoe UI", sans-serif;
-    background: linear-gradient(135deg, #1a1a1a, #2c2c2c, #121212);
-    display: flex;
-    justify-content: center;
-    color: #f5f5f5;
-}
+    <style>
+        :root {
+            --bg: #f4f6f9;
+            --panel: #ffffff;
+            --border: #e0e0e0;
+            --text: #1e1e1e;
+            --subtext: #777;
+            --accent: #2563eb;
+            --header: #ffffff;
+            --code-bg: #ffffff;
+        }
 
-.wrapper {
-    width: 95%;
-    max-width: 1100px;
-    margin-top: 40px;
-}
+        body.dark {
+            --bg: #121212;
+            --panel: #1e1e1e;
+            --border: #2c2c2c;
+            --text: #e5e5e5;
+            --subtext: #aaa;
+            --accent: #3b82f6;
+            --header: #1a1a1a;
+            --code-bg: #181818;
+        }
 
-h1 {
-    text-align: center;
-    font-size: 32px;
-    margin-bottom: 5px;
-    letter-spacing: 1px;
-    color: #7d0404;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
 
-.subtitle {
-    text-align: center;
-    font-size: 14px;
-    color: #885858;
-    margin-bottom: 30px;
-}
+        body {
+            background: var(--bg);
+            color: var(--text);
+        }
 
-textarea {
-    width: 100%;
-    height: 220px;
-    padding: 15px;
-    font-family: monospace;
-    font-size: 14px;
-    border-radius: 10px;
-    border: none;
-    outline: none;
-    background: #1e1e1e;
-    color: #f8f8f8;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-}
+        /* Header */
+        .header {
+            background: var(--header);
+            padding: 16px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-button {
-    padding: 10px 18px;
-    margin-top: 15px;
-    margin-right: 8px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.3s ease;
-}
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
 
-#analyze {
-    background: #7d0404;
-    color: #1a1a1a;
-}
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--subtext);
+        }
 
-#analyze:hover {
-    background: #885858;
-    transform: scale(1.05);
-}
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            width: 42px;
+            height: 22px;
+        }
 
-#clear {
-    background: #444;
-    color: white;
-}
+        .toggle input {
+            display: none;
+        }
 
-#clear:hover {
-    background: #666;
-}
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #ccc;
+            border-radius: 20px;
+        }
 
-.panel {
-    margin-top: 30px;
-    padding: 20px;
-    background: #1f1f1f;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.6);
-}
+        .slider:before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            top: 2px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
 
-.panel h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 18px;
-    border-bottom: 1px solid #333;
-    padding-bottom: 6px;
-    color: #7d0404;
-}
+        input:checked+.slider {
+            background: var(--accent);
+        }
 
-.badge {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    margin-right: 8px;
-    display: inline-block;
-    margin-bottom: 6px;
-}
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
 
-.KEYWORD { background: #885858; color: black; }
-.IDENTIFIER { background: #7d0404; color: black; }
-.INTEGER { background: #8ecae6; color: black; }
-.STRING { background: #9a2a2a; color: black; }
-.OPERATOR { background: #7d0404; color: black; }
+        /* Layout */
+        .container {
+            display: flex;
+            height: calc(100vh - 70px);
+            padding: 20px;
+            gap: 20px;
+        }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+        /* Panels */
+        .panel {
+            flex: 1;
+            background: var(--panel);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
 
-th {
-    text-align: left;
-    padding: 8px;
-    background: #2a2a2a;
-    font-size: 13px;
-    color: #885858;
-}
+        /* Panel Header */
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 14px;
+            background: var(--header);
+        }
 
-td {
-    padding: 8px;
-    border-bottom: 1px solid #333;
-}
+        /* Textarea */
+        textarea {
+            flex: 1;
+            border: none;
+            padding: 16px;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            background: var(--code-bg);
+            color: var(--text);
+        }
 
-tr:hover {
-    background: #2f2f2f;
-}
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--header);
+        }
 
-pre {
-    background: #121212;
-    padding: 15px;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-size: 13px;
-}
+        .tab {
+            padding: 10px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+        }
 
-footer {
-    margin-top: 40px;
-    text-align: center;
-    font-size: 13px;
-    color: #885858;
-}
-</style>
+        .tab.active {
+            border-bottom: 2px solid var(--accent);
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--header);
+            font-weight: 600;
+        }
+
+        /* AST */
+        pre {
+            background: var(--code-bg);
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        /* Buttons */
+        .actions {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        button.primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        button.primary:hover {
+            opacity: 0.9;
+        }
+
+        button:hover {
+            background: var(--header);
+        }
+
+        .nav-syntax {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 18px;
+            font-size: 13px;
+            border-radius: 6px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        }
+
+        .nav-syntax:hover {
+            opacity: 0.9;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="wrapper">
+    <div class="header">
+        <h1>Syntax Analyzer</h1>
 
-<h1>Syntax Analyzer</h1>
-<div class="subtitle">
-Compiler Design Project<br>
-TARUNKUMAR P | RA2311003050394
-</div>
+        <div class="header-right">
+            <span>Compiler Design Tool</span>
 
-<textarea id="code">
-int main() {
-    int x = 10;
-    if(x > 5){
-        x++;
+            <label class="toggle">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Editor Panel -->
+        <div class="panel">
+            <div class="panel-header">Source Code</div>
+
+            <textarea id="code">
+public class SyntaxAnalyserExample {
+    public static void main(String[] args) {
+        int age = 11;
+
+        if (age >= 18) {
+            System.out.println("You can create your BankAccount");
+        } else {
+            System.out.println("You can't create your BankAccount, your age is less than 18");
+        }
     }
-    return 0;
 }
-</textarea>
+        </textarea>
 
-<br>
-<button id="analyze">Analyze</button>
-<button id="clear">Clear</button>
+            <div class="actions">
+                <button onclick="clearAll()">Clear</button>
+                <button class="primary" onclick="analyze()">Analyze</button>
+            </div>
+        </div>
 
-<div class="panel">
-<h3>Tokens</h3>
-<div id="tokenSummary"></div>
-<table>
-<thead>
-<tr><th>#</th><th>Type</th><th>Value</th></tr>
-</thead>
-<tbody id="tokenBody"></tbody>
-</table>
-</div>
+        <div class="panel">
+            <div class="panel-header">Analysis Output</div>
 
-<div class="panel">
-<h3>AST (Simple Representation)</h3>
-<pre id="astOutput"></pre>
-</div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('tokens')">Tokens</div>
+                <div class="tab" onclick="switchTab('ast')">AST</div>
+            </div>
 
-<footer>
-Browser-Based Syntax Analyzer – Compiler Design
-</footer>
+            <div id="tokens" class="tab-content active">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tokenBody"></tbody>
+                </table>
+            </div>
 
-</div>
+            <div id="ast" class="tab-content">
+                <pre id="astOutput"></pre>
+            </div>
+        </div>
+        <button class="nav-syntax" onclick="goToLexical()">
+            Go Previous ←
+        </button>
 
-<script>
-const keywords = new Set(["int","float","return","if","else","for","while"]);
 
-function tokenize(code){
-  let tokens = [];
-  let words = code.match(/"[^"]*"|\w+|[{}();=+><]/g);
+    </div>
 
-  if(!words) return tokens;
+    <script>
 
-  words.forEach(word=>{
-    if(keywords.has(word)){
-      tokens.push({type:"KEYWORD", value:word});
-    }
-    else if(/^\d+$/.test(word)){
-      tokens.push({type:"INTEGER", value:word});
-    }
-    else if(/^".*"$/.test(word)){
-      tokens.push({type:"STRING", value:word});
-    }
-    else if(/[{}();=+><]/.test(word)){
-      tokens.push({type:"OPERATOR", value:word});
-    }
-    else{
-      tokens.push({type:"IDENTIFIER", value:word});
-    }
-  });
+        const keywords = new Set(["int", "float", "return", "if", "else", "for", "while"]);
 
-  return tokens;
-}
+        function tokenize(code) {
+            let tokens = [];
+            let words = code.match(/"[^"]*"|\w+|[{}();=+><]/g);
+            if (!words) return tokens;
 
-function generateAST(tokens){
-  let ast = "PROGRAM\n";
-  tokens.forEach(t=>{
-    ast += " ├─ " + t.type + " (" + t.value + ")\n";
-  });
-  return ast;
-}
+            words.forEach(word => {
+                if (keywords.has(word))
+                    tokens.push({ type: "KEYWORD", value: word });
+                else if (/^\d+$/.test(word))
+                    tokens.push({ type: "INTEGER", value: word });
+                else if (/^".*"$/.test(word))
+                    tokens.push({ type: "STRING", value: word });
+                else if (/[{}();=+><]/.test(word))
+                    tokens.push({ type: "OPERATOR", value: word });
+                else
+                    tokens.push({ type: "IDENTIFIER", value: word });
+            });
 
-document.getElementById("analyze").onclick = function(){
-  let code = document.getElementById("code").value;
-  let tokens = tokenize(code);
+            return tokens;
+        }
 
-  let tbody = document.getElementById("tokenBody");
-  let summary = document.getElementById("tokenSummary");
-  tbody.innerHTML = "";
-  summary.innerHTML = "";
+        function generateAST(tokens) {
+            let ast = "PROGRAM\n";
+            tokens.forEach(t => {
+                ast += " ├─ " + t.type + " (" + t.value + ")\n";
+            });
+            return ast;
+        }
 
-  let counts = {};
-  tokens.forEach((t,i)=>{
-    counts[t.type] = (counts[t.type]||0)+1;
-    tbody.innerHTML += "<tr><td>"+(i+1)+"</td><td>"+t.type+"</td><td>"+t.value+"</td></tr>";
-  });
+        function analyze() {
+            let code = document.getElementById("code").value;
+            let tokens = tokenize(code);
 
-  Object.keys(counts).forEach(type=>{
-    summary.innerHTML += `<span class="badge ${type}">${type}: ${counts[type]}</span>`;
-  });
+            let tbody = document.getElementById("tokenBody");
+            tbody.innerHTML = "";
 
-  document.getElementById("astOutput").textContent = generateAST(tokens);
-};
+            tokens.forEach((t, i) => {
+                tbody.innerHTML += `<tr><td>${i + 1}</td><td>${t.type}</td><td>${t.value}</td></tr>`;
+            });
 
-document.getElementById("clear").onclick = function(){
-  document.getElementById("code").value="";
-  document.getElementById("tokenBody").innerHTML="";
-  document.getElementById("tokenSummary").innerHTML="";
-  document.getElementById("astOutput").textContent="";
-};
-</script>
+            document.getElementById("astOutput").textContent = generateAST(tokens);
+        }
+
+        function clearAll() {
+            document.getElementById("code").value = "";
+            document.getElementById("tokenBody").innerHTML = "";
+            document.getElementById("astOutput").textContent = "";
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+            document.querySelector(`[onclick="switchTab('${id}')"]`).classList.add("active");
+            document.getElementById(id).classList.add("active");
+        }
+
+        /* Theme Toggle */
+        const toggle = document.getElementById("themeToggle");
+
+        toggle.addEventListener("change", function () {
+            document.body.classList.toggle("dark");
+        });
+
+        function goToLexical() {
+            document.body.style.opacity = "0.5";
+            setTimeout(() => {
+                window.location.href = "simulation.html";
+            }, 200);
+        }
+
+    </script>
 
 </body>
+
 </html>

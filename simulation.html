@@ -1,263 +1,447 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
-  <title>Lexical Analyzer – TARUNKUMAR P</title>
+  <title>Lexical Analyzer – VIJAYARAGUNATHAN P</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     :root {
-      --bg: #141414; --card: #1f1f1f; --border: #333;
-      --accent: #7d0404; --accent2: #7d0404; --text: #f5f5f5; --muted: #6a6a6a;
+      --bg: #f4f6f9;
+      --panel: #ffffff;
+      --border: #e0e0e0;
+      --text: #1e1e1e;
+      --muted: #777;
+      --accent: #2563eb;
+      --code-bg: #ffffff;
     }
+
+    body.dark {
+      --bg: #121212;
+      --panel: #1e1e1e;
+      --border: #2c2c2c;
+      --text: #e5e5e5;
+      --muted: #aaa;
+      --accent: #3b82f6;
+      --code-bg: #181818;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+      transition: background 0.3s, color 0.3s;
+    }
+
     body {
-      background: linear-gradient(135deg, #1a1a1a, #2c2c2c);
+      background: var(--bg);
       color: var(--text);
-      font-family: 'Segoe UI', sans-serif;
-      padding: 30px 16px 60px;
       min-height: 100vh;
     }
-    .container { max-width: 1150px; margin: auto; }
-    header { text-align: center; margin-bottom: 24px; }
-    .pill {
-      display: inline-block;
-      padding: 6px 14px;
-      font-weight: bold;
-      font-size: 13px;
-      color: var(--accent);
-      background: rgba(255, 159, 28, 0.1);
-      border: 1px solid rgba(255, 159, 28, 0.25);
-      border-radius: 999px;
-    }
-    h1 { font-size: 28px; margin: 12px 0 6px; color: var(--accent); }
-    .sub { font-size: 14px; color: var(--muted); }
-    textarea {
-      width: 100%;
-      min-height: 240px;
-      background: #101010;
-      color: var(--text);
-      padding: 12px;
-      font-family: monospace;
-      font-size: 13px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-    .controls {
-      margin-top: 12px;
+
+    /* Header */
+    .header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 30px;
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      justify-content: space-between;
       align-items: center;
     }
-    .btn {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #111;
-      font-weight: bold;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
+
+    .header h1 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .toggle {
+      position: relative;
+      width: 42px;
+      height: 22px;
+    }
+
+    .toggle input {
+      display: none;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 20px;
       cursor: pointer;
     }
-    .btn-clear {
-      background: transparent;
+
+    .slider:before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      top: 2px;
+      left: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    input:checked+.slider {
+      background: var(--accent);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Layout */
+    .container {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      height: calc(100vh - 70px);
+    }
+
+    /* Panels */
+    .panel {
+      flex: 1;
+      background: var(--panel);
       border: 1px solid var(--border);
-      color: var(--muted);
-      padding: 10px 14px;
       border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Panel Header */
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+      background: var(--panel);
+    }
+
+    /* Editor */
+    textarea {
+      flex: 1;
+      border: none;
+      padding: 16px;
+      font-family: Consolas, monospace;
+      font-size: 14px;
+      background: var(--code-bg);
+      color: var(--text);
+      resize: none;
+      outline: none;
+    }
+
+    /* Controls */
+    .controls {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
       cursor: pointer;
     }
-    .status { font-size: 13px; color: var(--muted); }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      margin-top: 16px;
+
+    button.primary {
+      background: var(--accent);
+      color: white;
+      border: none;
     }
-    th, td {
-      padding: 8px 12px;
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* Summary */
+    .summary {
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
     }
-    thead { background: #0d0d0d; color: var(--muted); }
-    td.val { font-family: monospace; color: #eee; }
+
     .badge {
       padding: 5px 10px;
       border-radius: 999px;
       font-size: 12px;
-      font-weight: bold;
-      display: inline-block;
+      font-weight: 600;
       margin: 4px 6px 4px 0;
+      background: var(--accent);
+      color: white;
     }
-    .KEYWORD { background: rgba(255,183,3,0.1); color: #7d0404; }
-    .IDENTIFIER { background: rgba(255,133,0,0.1); color: #7d0404; }
-    .INTEGER, .FLOAT { background: rgba(142,202,230,0.1); color: #8ecae6; }
-    .STRING { background: rgba(255,209,102,0.1); color: #ffd166; }
-    .OPERATOR { background: rgba(244,162,97,0.1); color: #7d0404; }
-    .DELIMITER { background: rgba(255,123,123,0.1); color: #ff7b7b; }
-    .COMMENT { background: rgba(189,189,189,0.1); color: #bdbdbd; }
-    .PREPROCESSOR { background: rgba(255,255,0,0.1); color: #ffee00; }
-    .UNKNOWN { background: rgba(239,35,60,0.1); color: #ef233c; }
-    .summary { margin-top: 20px; margin-bottom: 8px; }
+
+    /* Table */
+    .table-wrapper {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--panel);
+      font-weight: 600;
+    }
+
+    td.val {
+      font-family: monospace;
+    }
+
+    /* Footer */
     footer {
       text-align: center;
-      color: var(--muted);
       font-size: 13px;
-      margin-top: 40px;
-      padding-top: 16px;
+      padding: 16px;
       border-top: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .nav-syntax {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 18px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+    }
+
+    .nav-syntax:hover {
+      opacity: 0.9;
+    }
+
+
+    @media (max-width: 900px) {
+      .container {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
+
 <body>
-<div class="container">
-  <header>
-    <div class="pill">⚙ Lexical Analyzer</div>
-    <h1>Lexical Analysis</h1>
-    <p class="sub">Paste C code and click Tokenize</p>
-  </header>
 
-  <textarea id="code" spellcheck="false">#include &lt;stdio.h&gt;
-
-num1 = float(input("Enter the first number: "))
-num2 = float(input("Enter the second number: "))
-
-result = num1 + num2
-
-print(f"The sum of {num1} and {num2} is: {result}")
-</textarea>
-
-  <div class="controls">
-    <button class="btn" id="run">Tokenize</button>
-    <button class="btn-clear" id="clear">Clear</button>
-    <span class="status" id="status">Ready</span>
+  <div class="header">
+    <h1>Lexical Analyzer</h1>
+    <label class="toggle">
+      <input type="checkbox" id="themeToggle">
+      <span class="slider"></span>
+    </label>
   </div>
 
-  <div class="summary" id="summary"></div>
-  <table>
-    <thead><tr><th>#</th><th>Type</th><th>Value</th><th>Ln</th><th>Col</th></tr></thead>
-    <tbody id="tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted)">Click <strong>Tokenize</strong> to analyze code.</td></tr></tbody>
-  </table>
+  <div class="container">
+
+    <div class="panel">
+      <div class="panel-header">Source Code</div>
+
+      <textarea id="code" spellcheck="false">#include &lt;stdio.h&gt;
+
+word = "Python"
+for letter in word:
+    print(letter)
+</textarea>
+
+      <div class="controls">
+        <button id="clear">Clear</button>
+        <button class="primary" id="run">Tokenize</button>
+        <span id="status" style="font-size:13px;color:var(--muted);margin-left:auto;">Ready</span>
+      </div>
+    </div>
+
+
+    <div class="panel">
+      <div class="panel-header">Tokens</div>
+
+      <div class="summary" id="summary"></div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Value</th>
+              <th>Ln</th>
+              <th>Col</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td colspan="5" style="text-align:center;color:var(--muted)">
+                Click <strong>Tokenize</strong> to analyze code.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 
   <footer>
-    Name: <strong>TARUNKUMAR P</strong> | Reg. No: <strong>RA2311003050394</strong>
+    Name: <strong>VIJAYARAGUNATHAN P</strong> |
+    Reg. No: <strong>RA2311003050321</strong>
   </footer>
-</div>
 
-<script>
-const KEYWORDS = new Set(["int","float","char","if","else","while","for","return","void","double"]);
-const MULTI_OPS = new Set(["==","!=","<=",">=","&&","||","++","--","+=","-=","*=","/=","->"]);
-const SINGLE_OPS = new Set([..."+-*/=%<>&|!"]);
-const DELIMITERS = new Set([..."(){}[];,"]);
+  <button class="nav-syntax" onclick="goToSyntax()">
+    Go Next →
+  </button>
 
-function tokenize(input) {
-  const tokens = [];
-  let pos = 0, line = 1, col = 1;
+  <script>
+    document.getElementById("themeToggle").addEventListener("change", () => {
+      document.body.classList.toggle("dark");
+    });
+  </script>
 
-  const cur = () => input[pos];
-  const peek = () => input[pos + 1];
-  const adv = () => { if (cur() === '\n') { line++; col = 1; } else { col++; } pos++; };
-  const add = (type, value, l, c) => tokens.push({ type, value, line: l, column: c });
 
-  while (pos < input.length) {
-    while (cur() === ' ' || cur() === '\t' || cur() === '\r') adv();
-    if (cur() === '\n') { adv(); continue; }
+  <script>
+    const KEYWORDS = new Set(["int", "float", "char", "if", "else", "while", "for", "return", "void", "double"]);
+    const MULTI_OPS = new Set(["==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "->"]);
+    const SINGLE_OPS = new Set([..."+-*/=%<>&|!"]);
+    const DELIMITERS = new Set([..."(){}[];,"]);
 
-    const startLine = line, startCol = col;
+    function tokenize(input) {
+      const tokens = [];
+      let pos = 0, line = 1, col = 1;
 
-    if (cur() === '#') {
-      let val = '';
-      while (cur() && cur() !== '\n') { val += cur(); adv(); }
-      add('PREPROCESSOR', val.trim(), startLine, startCol);
-      continue;
-    }
+      const cur = () => input[pos];
+      const peek = () => input[pos + 1];
+      const adv = () => { if (cur() === '\n') { line++; col = 1; } else { col++; } pos++; };
+      const add = (type, value, l, c) => tokens.push({ type, value, line: l, column: c });
 
-    if (cur() === '/' && peek() === '/') {
-      let val = '';
-      while (cur() && cur() !== '\n') { val += cur(); adv(); }
-      add('COMMENT', val.trim(), startLine, startCol);
-      continue;
-    }
+      while (pos < input.length) {
+        while (cur() === ' ' || cur() === '\t' || cur() === '\r') adv();
+        if (cur() === '\n') { adv(); continue; }
 
-    if (/[0-9]/.test(cur())) {
-      let num = '', isFloat = false;
-      while (/[0-9.]/.test(cur())) {
-        if (cur() === '.' && isFloat) break;
-        if (cur() === '.') isFloat = true;
-        num += cur(); adv();
+        const startLine = line, startCol = col;
+
+        if (cur() === '#') {
+          let val = '';
+          while (cur() && cur() !== '\n') { val += cur(); adv(); }
+          add('PREPROCESSOR', val.trim(), startLine, startCol);
+          continue;
+        }
+
+        if (cur() === '/' && peek() === '/') {
+          let val = '';
+          while (cur() && cur() !== '\n') { val += cur(); adv(); }
+          add('COMMENT', val.trim(), startLine, startCol);
+          continue;
+        }
+
+        if (/[0-9]/.test(cur())) {
+          let num = '', isFloat = false;
+          while (/[0-9.]/.test(cur())) {
+            if (cur() === '.' && isFloat) break;
+            if (cur() === '.') isFloat = true;
+            num += cur(); adv();
+          }
+          add(isFloat ? 'FLOAT' : 'INTEGER', num, startLine, startCol);
+          continue;
+        }
+
+        if (/[a-zA-Z_]/.test(cur())) {
+          let word = '';
+          while (/[a-zA-Z0-9_]/.test(cur())) { word += cur(); adv(); }
+          add(KEYWORDS.has(word) ? 'KEYWORD' : 'IDENTIFIER', word, startLine, startCol);
+          continue;
+        }
+
+        if (cur() === '"' || cur() === "'") {
+          const quote = cur();
+          let val = quote; adv();
+          while (cur() && cur() !== quote) {
+            if (cur() === '\\') { val += cur(); adv(); }
+            val += cur(); adv();
+          }
+          if (cur() === quote) { val += cur(); adv(); }
+          add('STRING', val, startLine, startCol);
+          continue;
+        }
+
+        if (peek() && MULTI_OPS.has(cur() + peek())) {
+          add('OPERATOR', cur() + peek(), startLine, startCol); adv(); adv(); continue;
+        }
+
+        if (SINGLE_OPS.has(cur())) { add('OPERATOR', cur(), startLine, startCol); adv(); continue; }
+        if (DELIMITERS.has(cur())) { add('DELIMITER', cur(), startLine, startCol); adv(); continue; }
+
+        if (cur()) {
+          add('UNKNOWN', cur(), startLine, startCol); adv();
+        }
       }
-      add(isFloat ? 'FLOAT' : 'INTEGER', num, startLine, startCol);
-      continue;
+
+      return tokens;
     }
 
-    if (/[a-zA-Z_]/.test(cur())) {
-      let word = '';
-      while (/[a-zA-Z0-9_]/.test(cur())) { word += cur(); adv(); }
-      add(KEYWORDS.has(word) ? 'KEYWORD' : 'IDENTIFIER', word, startLine, startCol);
-      continue;
-    }
+    function render(tokens) {
+      const tbody = document.getElementById('tbody');
+      const summary = document.getElementById('summary');
+      tbody.innerHTML = '';
+      summary.innerHTML = '';
 
-    if (cur() === '"' || cur() === "'") {
-      const quote = cur();
-      let val = quote; adv();
-      while (cur() && cur() !== quote) {
-        if (cur() === '\\') { val += cur(); adv(); }
-        val += cur(); adv();
+      const countMap = {};
+      tokens.forEach(t => countMap[t.type] = (countMap[t.type] || 0) + 1);
+      for (let [type, count] of Object.entries(countMap)) {
+        const span = document.createElement('span');
+        span.className = 'badge ' + type;
+        span.textContent = `${type}: ${count}`;
+        summary.appendChild(span);
       }
-      if (cur() === quote) { val += cur(); adv(); }
-      add('STRING', val, startLine, startCol);
-      continue;
+
+      tokens.forEach((t, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i + 1}</td><td>${t.type}</td><td class="val">${t.value}</td><td>${t.line}</td><td>${t.column}</td>`;
+        tbody.appendChild(tr);
+      });
     }
 
-    if (peek() && MULTI_OPS.has(cur() + peek())) {
-      add('OPERATOR', cur() + peek(), startLine, startCol); adv(); adv(); continue;
+    document.getElementById('run').onclick = () => {
+      const input = document.getElementById('code').value;
+      const tokens = tokenize(input);
+      render(tokens);
+      document.getElementById('status').textContent = `Done — ${tokens.length} tokens`;
+    };
+
+    document.getElementById('clear').onclick = () => {
+      document.getElementById('code').value = '';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Click <strong>Tokenize</strong> to analyze code.</td></tr>';
+      document.getElementById('summary').innerHTML = '';
+      document.getElementById('status').textContent = 'Ready';
+    };
+
+    function goToSyntax() {
+      document.body.style.opacity = "0.5";
+      setTimeout(() => {
+        window.location.href = "simulation1.html";
+      }, 200);
     }
-
-    if (SINGLE_OPS.has(cur())) { add('OPERATOR', cur(), startLine, startCol); adv(); continue; }
-    if (DELIMITERS.has(cur())) { add('DELIMITER', cur(), startLine, startCol); adv(); continue; }
-
-    if (cur()) {
-      add('UNKNOWN', cur(), startLine, startCol); adv();
-    }
-  }
-
-  return tokens;
-}
-
-function render(tokens) {
-  const tbody = document.getElementById('tbody');
-  const summary = document.getElementById('summary');
-  tbody.innerHTML = '';
-  summary.innerHTML = '';
-
-  const countMap = {};
-  tokens.forEach(t => countMap[t.type] = (countMap[t.type] || 0) + 1);
-  for (let [type, count] of Object.entries(countMap)) {
-    const span = document.createElement('span');
-    span.className = 'badge ' + type;
-    span.textContent = `${type}: ${count}`;
-    summary.appendChild(span);
-  }
-
-  tokens.forEach((t, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td>${t.type}</td><td class="val">${t.value}</td><td>${t.line}</td><td>${t.column}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-document.getElementById('run').onclick = () => {
-  const input = document.getElementById('code').value;
-  const tokens = tokenize(input);
-  render(tokens);
-  document.getElementById('status').textContent = `Done — ${tokens.length} tokens`;
-};
-
-document.getElementById('clear').onclick = () => {
-  document.getElementById('code').value = '';
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Click <strong>Tokenize</strong> to analyze code.</td></tr>';
-  document.getElementById('summary').innerHTML = '';
-  document.getElementById('status').textContent = 'Ready';
-};
-</script>
+  </script>
 </body>
+
 </html>
-
-
